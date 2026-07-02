@@ -1,0 +1,114 @@
+{
+  "database": "smart_event_platform",
+  "collections": {
+    "users": {
+      "fields": {
+        "_id": "ObjectId",
+        "name": "String (required, max 100)",
+        "email": "String (required, unique, lowercase)",
+        "password": "String (required, bcrypt-hashed, select:false)",
+        "role": "Enum: admin | organizer | attendee",
+        "avatar": "String (URL, optional)",
+        "phone": "String (optional)",
+        "bio": "String (max 500, optional)",
+        "interests": "String[] (used by recommendation engine)",
+        "isActive": "Boolean (default: true)",
+        "lastLogin": "Date",
+        "createdAt": "Date (auto)",
+        "updatedAt": "Date (auto)"
+      },
+      "indexes": ["email (unique)", "role"]
+    },
+    "events": {
+      "fields": {
+        "_id": "ObjectId",
+        "title": "String (required, max 150)",
+        "description": "String (required, max 5000)",
+        "category": "Enum: Technology|Business|Music|Sports|Education|Health|Art & Culture|Networking|Food & Drink|Other",
+        "tags": "String[]",
+        "organizer": "ObjectId -> users (required)",
+        "venue": "String (required)",
+        "address": "String (optional)",
+        "isOnline": "Boolean (default: false)",
+        "onlineLink": "String (optional)",
+        "startDate": "Date (required)",
+        "endDate": "Date (required)",
+        "coverImage": "String (URL, optional)",
+        "price": "Number (min 0, default 0)",
+        "capacity": "Number (required, min 1)",
+        "seatsBooked": "Number (default 0, denormalized counter)",
+        "status": "Enum: draft | published | cancelled | completed",
+        "viewCount": "Number (default 0, denormalized counter)",
+        "createdAt": "Date (auto)",
+        "updatedAt": "Date (auto)"
+      },
+      "virtuals": {
+        "seatsAvailable": "capacity - seatsBooked"
+      },
+      "indexes": [
+        "Text index: (title, description, tags)",
+        "category", "startDate", "organizer", "status"
+      ]
+    },
+    "bookings": {
+      "fields": {
+        "_id": "ObjectId",
+        "user": "ObjectId -> users (required)",
+        "event": "ObjectId -> events (required)",
+        "quantity": "Number (required, min 1)",
+        "totalAmount": "Number (required, min 0)",
+        "status": "Enum: confirmed | cancelled | pending",
+        "paymentMethod": "Enum: free | card | bank_transfer | cash",
+        "bookingReference": "String (required, unique, format BK-XXXXXXXX)",
+        "createdAt": "Date (auto)",
+        "updatedAt": "Date (auto)"
+      },
+      "indexes": ["user", "event", "status"]
+    },
+    "tickets": {
+      "fields": {
+        "_id": "ObjectId",
+        "booking": "ObjectId -> bookings (required)",
+        "event": "ObjectId -> events (required)",
+        "user": "ObjectId -> users (required)",
+        "ticketCode": "String (required, unique) — format: uuid.hmac16chars",
+        "qrCodeImage": "String (required) — base64 PNG data URL",
+        "seatNumber": "Number",
+        "status": "Enum: valid | used | cancelled",
+        "usedAt": "Date (set on scan/check-in)",
+        "createdAt": "Date (auto)",
+        "updatedAt": "Date (auto)"
+      },
+      "indexes": ["ticketCode (unique)", "event", "user"]
+    },
+    "attendances": {
+      "fields": {
+        "_id": "ObjectId",
+        "event": "ObjectId -> events (required)",
+        "ticket": "ObjectId -> tickets (required, unique)",
+        "user": "ObjectId -> users (required)",
+        "verifiedBy": "ObjectId -> users (required)",
+        "checkedInAt": "Date (default: now)",
+        "method": "Enum: qr_scan | manual",
+        "createdAt": "Date (auto)",
+        "updatedAt": "Date (auto)"
+      },
+      "indexes": ["event", "ticket (unique)"]
+    },
+    "analytics": {
+      "fields": {
+        "_id": "ObjectId",
+        "event": "ObjectId -> events (required)",
+        "date": "Date (required)",
+        "bookingsCount": "Number (default 0)",
+        "ticketsSold": "Number (default 0)",
+        "revenue": "Number (default 0)",
+        "attendanceCount": "Number (default 0)",
+        "views": "Number (default 0)",
+        "createdAt": "Date (auto)",
+        "updatedAt": "Date (auto)"
+      },
+      "indexes": ["(event, date) compound unique"]
+    }
+  }
+}
